@@ -39,65 +39,55 @@ func (pool Database) GetStudentID (studentEmail string) (int, error) {
 	return studentID, nil
 }
 
-// func (pool Database) GetTeacherID(teacherEmail string) (int, error) {
-// 	// begin transaction
-// 	ctx := context.Background()
-// 	tx, err := pool.DB.Begin(ctx)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	defer tx.Rollback(ctx)
+func (pool Database) GetTeacherID(teacherEmail string) (int, error) {
+	query := "SELECT id FROM teachers WHERE email = $1"
 
-// 	// Get the teacher ID
-// 	var teacherID int
-// 	err = tx.QueryRow(ctx, "SELECT id FROM teachers WHERE email = $1", teacherEmail).Scan(&teacherID)
-// 	if err != nil {
-// 		return 0, fmt.Errorf("could not find teacher with email %s: %v", teacherEmail, err)
-// 	}
+	row := pool.DB.QueryRow(context.Background(), query, teacherEmail)
 
-// 	// Commit the transaction
-// 	if err = tx.Commit(ctx); err != nil {
-// 		return 0, err
-// 	}
+	var teacherID int
+	err := row.Scan(&teacherID)
+	if err != nil {
+		return 0, fmt.Errorf("could not find teacher with email %s: %v", teacherEmail, err)
+	}
 
-// 	return teacherID, nil
-// }
+	return teacherID, nil
+}
 
-// func (pool Database) RegisterStudentsToTeacher(teacherEmail string, studentEmails []string) error {
-// 	// begin transaction
-// 	ctx := context.Background()
-// 	tx, err := pool.DB.Begin(ctx)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer tx.Rollback(ctx)
+func (pool Database) RegisterStudentsToTeacher(teacherEmail string, studentEmails []string) error {
+	// begin transaction
+	ctx := context.Background()
+	tx, err := pool.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
 
-// 	// Get the teacher ID
-// 	var teacherID int
-// 	err = tx.QueryRow(ctx, "SELECT id FROM teachers WHERE email = $1", teacherEmail).Scan(&teacherID)
-// 	if err != nil {
-// 		return fmt.Errorf("could not find teacher with email %s: %v", teacherEmail, err)
-// 	}
+	// Get the teacher ID
+	var teacherID int
+	err = tx.QueryRow(ctx, "SELECT id FROM teachers WHERE email = $1", teacherEmail).Scan(&teacherID)
+	if err != nil {
+		return fmt.Errorf("could not find teacher with email %s: %v", teacherEmail, err)
+	}
 
-// 	for _, studentEmail := range studentEmails {
-// 		// Get the student ID
-// 		var studentID int
-// 		err = tx.QueryRow(ctx, "SELECT id FROM students WHERE email = $1", studentEmail).Scan(&studentID)
-// 		if err != nil {
-// 			return fmt.Errorf("could not find student with email %s: %v", studentEmail, err)
-// 		}
+	for _, studentEmail := range studentEmails {
+		// Get the student ID
+		var studentID int
+		err = tx.QueryRow(ctx, "SELECT id FROM students WHERE email = $1", studentEmail).Scan(&studentID)
+		if err != nil {
+			return fmt.Errorf("could not find student with email %s: %v", studentEmail, err)
+		}
 
-// 		// Prepare the insert statement
-// 		_, err = tx.Exec(ctx, "INSERT INTO teacher_students (teacher_id, student_id) VALUES ($1, $2)", teacherID, studentID)
-// 		if err != nil {
-// 			return fmt.Errorf("could not insert teacher-student relationship for teacher %s and student %s: %v", teacherEmail, studentEmail, err)
-// 		}
-// 	}
+		// Prepare the insert statement
+		_, err = tx.Exec(ctx, "INSERT INTO teacher_students (teacher_id, student_id) VALUES ($1, $2)", teacherID, studentID)
+		if err != nil {
+			return fmt.Errorf("could not insert teacher-student relationship for teacher %s and student %s: %v", teacherEmail, studentEmail, err)
+		}
+	}
 
-// 	// Commit the transaction
-// 	if err = tx.Commit(ctx); err != nil {
-// 		return err
-// 	}
+	// Commit the transaction
+	if err = tx.Commit(ctx); err != nil {
+		return err
+	}
 
-// 	return nil
-// }
+	return nil
+}

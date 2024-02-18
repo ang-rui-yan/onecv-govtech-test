@@ -23,20 +23,20 @@ func (s *teacherService) GetStudentID(studentEmail string) (int, error) {
 	return id, nil
 }
 
-// func (s *teacherService) GetTeacherID(teacherEmail string) (int, error) {
-// 	id, err := s.db.GetTeacherID(teacherEmail)
-// 	if err != nil {
-// 		return 0, err
-// 	}
+func (s *teacherService) GetTeacherID(teacherEmail string) (int, error) {
+	id, err := s.db.GetTeacherID(teacherEmail)
+	if err != nil {
+		return 0, err
+	}
 
-// 	return id, nil
-// }
+	return id, nil
+}
 
-// func (s *teacherService) Register(teacherEmail string, studentEmails []string) (error) {
-// 	err := s.db.RegisterStudentsToTeacher(teacherEmail, studentEmails)
-// 	if err != nil {
-// 		return err
-// 	}
+func (s *teacherService) RegisterStudentsToTeacher(teacherEmail string, studentEmails []string) (error) {
+	err := s.db.RegisterStudentsToTeacher(teacherEmail, studentEmails)
+	if err != nil {
+		return err
+	}
 
-// 	return nil
-// }
+	return nil
+}
