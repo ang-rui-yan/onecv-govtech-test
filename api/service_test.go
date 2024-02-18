@@ -277,9 +277,17 @@ func TestSuspend(t *testing.T) {
 
 	database := NewDatabase(mock)
 	teacherService := NewTeacherService(database)
+
+	query := `
+		UPDATE students 
+		SET suspended = true
+		WHERE email = $1`
 	
 	t.Run("student is suspended successfully", func(t *testing.T) {
 		studentEmail := "studentmary@gmail.com"
+		mock.ExpectExec(regexp.QuoteMeta(query)).
+			WithArgs(studentEmail).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		err := teacherService.Suspend(studentEmail)
 		assert.NoError(t, err)
 	})

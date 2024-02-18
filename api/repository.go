@@ -127,5 +127,19 @@ func (pool Database) GetCommonStudents(teacherEmails []string) ([]string, error)
 
 
 func (pool Database) Suspend(studentEmail string) error {
-	panic("not implemented")
+	query := `
+		UPDATE students 
+		SET suspended = true
+		WHERE email = $1`
+
+	cmdTag, err := pool.DB.Exec(context.Background(), query, studentEmail)
+	if err != nil {
+		return err
+	}
+
+    if cmdTag.RowsAffected() == 0 {
+        return fmt.Errorf("no action taken for student %s, they might have been suspended concurrently", studentEmail)
+    }
+	
+	return nil
 }

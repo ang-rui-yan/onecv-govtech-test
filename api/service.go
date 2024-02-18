@@ -1,5 +1,7 @@
 package api
 
+import "fmt"
+
 type TeacherService interface {
 	GetStudentID(studentEmail string) (int, error)
 	GetTeacherID(teacherEmail string) (int, error)
@@ -53,7 +55,16 @@ func (s *teacherService) GetCommonStudents(teacherEmails []string) ([]string, er
 }
 
 func (s *teacherService) Suspend(studentEmail string) error {
-	err := s.db.Suspend(studentEmail)
+	if studentEmail == "" {
+		return fmt.Errorf("student email cannot be empty")
+	}
+
+	_, err := s.db.GetStudentID(studentEmail)
+	if err != nil {
+		return err
+	}
+
+	err = s.db.Suspend(studentEmail)
 	if err != nil {
 		return err
 	}
