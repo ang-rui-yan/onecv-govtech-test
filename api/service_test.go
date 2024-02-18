@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"studentadmin/utils"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
@@ -343,6 +344,134 @@ func TestRetrieveForNotifications(t *testing.T) {
 	}
 	defer mock.Close()
 
+	query := `
+		SELECT DISTINCT email 
+		FROM students 
+		WHERE NOT suspended AND (
+			email = ANY($1) OR
+			id IN (
+				SELECT student_id 
+				FROM teacher_students 
+				WHERE teacher_id = (SELECT id FROM teachers WHERE email = $2)
+			)
+		)`
+
+	database := NewDatabase(mock)
+	teacherService := NewTeacherService(database)
+	teacherEmail := "teacherken@gmail.com"
+	notification := "Hello students! @studentagnes@gmail.com @studentmiche@gmail.com"
+
 	t.Run("students found for one teacher", func(t *testing.T) {
+		mentions, err := utils.ExtractEmailMentions(notification)
+		
+		assert.NoError(t, err)
+
+		expectedRecipients := []string{"studentbob@gmail.com", "studentagnes@gmail.com", "studentmiche@gmail.com"}
+
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id FROM teachers WHERE email = $1")).
+			WithArgs(teacherEmail).
+			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
+
+		mock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs(mentions, teacherEmail).
+			WillReturnRows(pgxmock.NewRows([]string{"email"}).
+				AddRow("studentbob@gmail.com").
+				AddRow("studentagnes@gmail.com").
+				AddRow("studentmiche@gmail.com"))
+
+		recipients, err := teacherService.RetrieveForNotifications(teacherEmail, notification)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedRecipients, recipients)
 	})
+
+	t.Run("no students found for notification", func(t *testing.T) {
+		teacherEmail := "teacherken@gmail.com"
+		notification := "Hello everyone!"
+
+		mentions, err := utils.ExtractEmailMentions(notification)
+		
+		assert.NoError(t, err)	
+	
+		query := `
+			SELECT DISTINCT email 
+			FROM students 
+			WHERE NOT suspended AND (
+				email = ANY($1) OR
+				id IN (
+					SELECT student_id 
+					FROM teacher_students 
+					WHERE teacher_id = (SELECT id FROM teachers WHERE email = $2)
+				)
+			)`
+
+		
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id FROM teachers WHERE email = $1")).
+			WithArgs(teacherEmail).
+			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
+		
+		mock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs(mentions, teacherEmail).
+			WillReturnRows(pgxmock.NewRows([]string{"email"}))
+	
+		recipients, err := teacherService.RetrieveForNotifications(teacherEmail, notification)
+		assert.NoError(t, err)
+		assert.Empty(t, recipients)
+	})
+
+	t.Run("Retrieve students that are not registered under the teacher but are in mentions only", func(t *testing.T) {
+        teacherEmail := "teacherken@gmail.com"
+        notification := "Important update! @outsidestudent@gmail.com"
+
+		mentions, err := utils.ExtractEmailMentions(notification)
+		
+		assert.NoError(t, err)	
+
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id FROM teachers WHERE email = $1")).
+			WithArgs(teacherEmail).
+			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
+
+        mock.ExpectQuery(regexp.QuoteMeta(query)).
+            WithArgs(mentions, teacherEmail).
+            WillReturnRows(pgxmock.NewRows([]string{"email"}).AddRow("outsidestudent@gmail.com"))
+
+        recipients, err := teacherService.RetrieveForNotifications(teacherEmail, notification)
+        assert.NoError(t, err)
+        assert.Equal(t, []string{"outsidestudent@gmail.com"}, recipients)
+    })
+
+    t.Run("Retrieve suspended students", func(t *testing.T) {
+        // Assuming suspended students are excluded from notification recipients
+        teacherEmail := "teacherken@gmail.com"
+        notification := "Hey @suspendedstudent@gmail.com, check this out!"
+		mentions, err := utils.ExtractEmailMentions(notification)
+		
+		assert.NoError(t, err)	
+
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id FROM teachers WHERE email = $1")).
+			WithArgs(teacherEmail).
+			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
+		
+        // No rows returned to simulate all mentioned students being suspended
+        mock.ExpectQuery(regexp.QuoteMeta(query)).
+            WithArgs(mentions, teacherEmail).
+            WillReturnRows(pgxmock.NewRows([]string{"email"}))
+
+        recipients, err := teacherService.RetrieveForNotifications(teacherEmail, notification)
+        assert.NoError(t, err)
+        assert.Empty(t, recipients) 
+    })
+
+
+	t.Run("The teacher is non-existent", func(t *testing.T) {
+		teacherEmail := "nonexistentteacher@gmail.com"
+		notification := "Hello @studentagnes@gmail.com"
+
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id FROM teachers WHERE email = $1")).
+			WithArgs(teacherEmail).
+			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
+
+		_, err := teacherService.RetrieveForNotifications(teacherEmail, notification)
+		assert.Error(t, err)
+	})
+	
 }

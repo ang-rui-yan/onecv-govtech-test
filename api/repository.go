@@ -157,5 +157,37 @@ func (pool Database) Suspend(studentEmail string) error {
 }
 
 func (pool Database) RetrieveForNotifications(teacherEmail string, mentions []string) ([]string, error) {
-	panic("not implemented")
+	query := `
+		SELECT DISTINCT email 
+		FROM students 
+		WHERE NOT suspended AND (
+			email = ANY($1) OR
+			id IN (
+				SELECT student_id 
+				FROM teacher_students 
+				WHERE teacher_id = (SELECT id FROM teachers WHERE email = $2)
+			)
+		)`
+
+
+	rows, err := pool.DB.Query(context.Background(), query, mentions, teacherEmail)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve students for notification: %v", err)
+	}
+	defer rows.Close()
+
+	var recipients []string
+	for rows.Next() {
+		var email string
+		if err := rows.Scan(&email); err != nil {
+			return nil, fmt.Errorf("failed to scan student email: %v", err)
+		}
+		recipients = append(recipients, email)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed during rows iteration: %v", err)
+	}
+
+	return recipients, nil
 }

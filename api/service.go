@@ -81,10 +81,18 @@ func (s *teacherService) RetrieveForNotifications(teacherEmail string, notificat
 		return nil, err
 	}
 
-	receipents, err := s.db.RetrieveForNotifications(teacherEmail, mentions)
+    // Check if the teacher exists
+    _, err = s.db.GetTeacherID(teacherEmail)
+    if err != nil {
+        return nil, err
+    }
+
+	recipients, err := s.db.RetrieveForNotifications(teacherEmail, mentions)
 	if err != nil {
 		return nil, err
 	}
 
-	return receipents, nil
+	recipients = utils.RemoveDuplicates(recipients)
+
+	return recipients, nil
 }
