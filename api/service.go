@@ -1,6 +1,9 @@
 package api
 
-import "fmt"
+import (
+	"fmt"
+	"studentadmin/utils"
+)
 
 type TeacherService interface {
 	GetStudentID(studentEmail string) (int, error)
@@ -70,4 +73,18 @@ func (s *teacherService) Suspend(studentEmail string) error {
 	}
 
 	return nil
+}
+
+func (s *teacherService) RetrieveForNotifications(teacherEmail string, notification string) ([]string, error) {
+	mentions, err := utils.ExtractEmailMentions(notification)
+	if err != nil {
+		return nil, err
+	}
+
+	receipents, err := s.db.RetrieveForNotifications(teacherEmail, mentions)
+	if err != nil {
+		return nil, err
+	}
+
+	return receipents, nil
 }

@@ -155,3 +155,7 @@ func (pool Database) Suspend(studentEmail string) error {
 	
 	return nil
 }
+
+func (pool Database) RetrieveForNotifications(teacherEmail string, mentions []string) ([]string, error) {
+	panic("not implemented")
+}

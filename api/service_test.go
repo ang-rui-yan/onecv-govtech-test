@@ -335,3 +335,14 @@ func TestSuspend(t *testing.T) {
 		assert.EqualError(t, err, "student email cannot be empty")
 	})
 }
+
+func TestRetrieveForNotifications(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	t.Run("students found for one teacher", func(t *testing.T) {
+	})
+}
