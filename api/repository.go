@@ -78,7 +78,8 @@ func (pool Database) RegisterStudentsToTeacher(teacherEmail string, studentEmail
 		}
 
 		// Prepare the insert statement
-		_, err = tx.Exec(ctx, "INSERT INTO teacher_students (teacher_id, student_id) VALUES ($1, $2)", teacherID, studentID)
+		query := "INSERT INTO teacher_students (teacher_id, student_id) VALUES ($1, $2) ON CONFLICT (teacher_id, student_id) DO NOTHING"
+		_, err = tx.Exec(ctx, query, teacherID, studentID)
 		if err != nil {
 			return fmt.Errorf("could not insert teacher-student relationship for teacher %s and student %s: %v", teacherEmail, studentEmail, err)
 		}
