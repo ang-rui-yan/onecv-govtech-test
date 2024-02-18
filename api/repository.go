@@ -92,3 +92,40 @@ func (pool Database) RegisterStudentsToTeacher(teacherEmail string, studentEmail
 
 	return nil
 }
+
+func (pool Database) GetCommonStudents(teacherEmails []string) ([]string, error) {
+	query := `
+			SELECT s.email 
+			FROM student s
+			INNER JOIN teacher_students ts ON s.id = ts.student_id
+			INNER JOIN teacher t ON ts.teacher_id = t.id 
+			WHERE t.email = ANY($1)
+			GROUP BY s.email
+			HAVING COUNT(DISTINCT t.id) = (SELECT COUNT(DISTINCT id) FROM teacher WHERE email = ANY($1))`
+
+	rows, err := pool.DB.Query(context.Background(), query, teacherEmails)
+	if err != nil {
+		return nil, fmt.Errorf("could not find students for teachers %v: %v", teacherEmails, err)
+	}
+	defer rows.Close()
+
+	var students []string
+	for rows.Next() {
+		var studentEmail string
+		if err := rows.Scan(&studentEmail); err != nil {
+			return nil, err
+		}
+		students = append(students, studentEmail)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return students, nil
+}
+
+
+func (pool Database) Suspend(studentEmail string) error {
+	panic("not implemented")
+}

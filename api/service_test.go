@@ -165,3 +165,140 @@ func TestRegisterStudentsToTeacher(t *testing.T) {
 	})
 
 }
+
+func TestGetCommonStudents(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	database := NewDatabase(mock)
+	teacherService := NewTeacherService(database)
+	
+	query := `
+		SELECT s.email 
+		FROM student s
+		INNER JOIN teacher_students ts ON s.id = ts.student_id
+		INNER JOIN teacher t ON ts.teacher_id = t.id 
+		WHERE t.email = ANY($1)
+		GROUP BY s.email
+		HAVING COUNT(DISTINCT t.id) = (SELECT COUNT(DISTINCT id) FROM teacher WHERE email = ANY($1))`
+
+	t.Run("common students found for one teacher", func(t *testing.T) {
+		teacherEmails := []string{"teacherken@gmail.com"}
+		mock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs(pgxmock.AnyArg()).
+			WillReturnRows(pgxmock.NewRows([]string{"email"}).
+				AddRow("commonstudent1@gmail.com").
+				AddRow("commonstudent2@gmail.com").
+				AddRow("student_only_under_teacher_ken@gmail.com"))
+
+		students, err := teacherService.GetCommonStudents(teacherEmails)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{
+			"commonstudent1@gmail.com", 
+			"commonstudent2@gmail.com",
+			"student_only_under_teacher_ken@gmail.com"}, students)
+	})
+
+
+	t.Run("common students found", func(t *testing.T) {
+		teacherEmails := []string{"teacherken@gmail.com", "teacherjoe@gmail.com"}
+		mock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs(pgxmock.AnyArg()).
+			WillReturnRows(pgxmock.NewRows([]string{"email"}).
+				AddRow("commonstudent1@gmail.com").
+				AddRow("commonstudent2@gmail.com"))
+
+		students, err := teacherService.GetCommonStudents(teacherEmails)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"commonstudent1@gmail.com", "commonstudent2@gmail.com"}, students)
+	})
+
+	t.Run("teacher not found", func(t *testing.T) {
+		teacherEmails := []string{"random@gmail.com"}
+		mock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs(pgxmock.AnyArg()).
+			WillReturnError(pgx.ErrNoRows)
+
+		students, err := teacherService.GetCommonStudents(teacherEmails)
+		assert.Error(t, err)
+		assert.Nil(t, students)
+	})
+
+
+	t.Run("empty teacher email", func(t *testing.T) {
+		teacherEmails := []string{""}
+		mock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs(pgxmock.AnyArg()).
+			WillReturnError(pgx.ErrNoRows)
+
+		students, err := teacherService.GetCommonStudents(teacherEmails)
+		assert.Error(t, err)
+		assert.Nil(t, students)
+	})
+
+
+	t.Run("no common students", func(t *testing.T) {
+		teacherEmails := []string{"teacherken@gmail.com", "teacherjoe@gmail.com"}
+		// no rows returned to simulate no common students
+		mock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs(pgxmock.AnyArg()).
+			WillReturnRows(pgxmock.NewRows([]string{"email"})) 
+
+		students, err := teacherService.GetCommonStudents(teacherEmails)
+		assert.NoError(t, err)
+		assert.Empty(t, students)
+	})
+
+
+	t.Run("duplicate teacher email", func(t *testing.T) {
+		teacherEmails := []string{"teacherken@gmail.com", "teacherken@gmail.com"}
+
+		mock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs(pgxmock.AnyArg()).
+			WillReturnRows(pgxmock.NewRows([]string{"email"}).
+				AddRow("commonstudent1@gmail.com").
+				AddRow("commonstudent2@gmail.com"))
+
+		students, err := teacherService.GetCommonStudents(teacherEmails)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"commonstudent1@gmail.com", "commonstudent2@gmail.com"}, students)
+	})
+}
+
+func TestSuspend(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	database := NewDatabase(mock)
+	teacherService := NewTeacherService(database)
+	
+	t.Run("student is suspended successfully", func(t *testing.T) {
+		studentEmail := "studentmary@gmail.com"
+		err := teacherService.Suspend(studentEmail)
+		assert.NoError(t, err)
+	})
+
+	t.Run("student has already been suspended before", func(t *testing.T) {
+		studentEmail := "studentmary@gmail.com"
+		err := teacherService.Suspend(studentEmail)
+		assert.NoError(t, err)
+	})
+
+	t.Run("student does not exist", func(t *testing.T) {
+		studentEmail := "fakestudent@gmail.com"
+		err := teacherService.Suspend(studentEmail)
+		assert.Error(t, err)
+	})
+
+	t.Run("student email is empty", func(t *testing.T) {
+		studentEmail := ""
+		err := teacherService.Suspend(studentEmail)
+		assert.Error(t, err)
+	})
+}

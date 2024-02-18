@@ -7,7 +7,6 @@ func main() {
 
 	api := router.Group("/api")
 	
-	api.GET("/health")
 	api.POST("/register")
 	api.GET("/commonstudents")
 	api.POST("/suspend")
