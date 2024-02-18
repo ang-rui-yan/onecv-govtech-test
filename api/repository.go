@@ -33,7 +33,7 @@ func (pool Database) GetStudentID (studentEmail string) (int, error) {
 	var studentID int
 	err := row.Scan(&studentID)
 	if err != nil {
-		return 0, fmt.Errorf("could not find student with email %s: %v", studentEmail, err)
+		return 0, fmt.Errorf("could not find student with email %s", studentEmail)
 	}
 
 	return studentID, nil
@@ -127,18 +127,30 @@ func (pool Database) GetCommonStudents(teacherEmails []string) ([]string, error)
 
 
 func (pool Database) Suspend(studentEmail string) error {
+	ctx := context.Background()
+
+	var suspended bool
+	err := pool.DB.QueryRow(ctx, "SELECT suspended FROM students WHERE email = $1", studentEmail).
+			Scan(&suspended)
+	if err != nil {
+		return fmt.Errorf("could not query student suspension status: %v", err)
+	}
+	if suspended {
+		return fmt.Errorf("student with email %s is already suspended", studentEmail)
+	}
+	
 	query := `
 		UPDATE students 
 		SET suspended = true
-		WHERE email = $1`
+		WHERE email = $1 AND NOT suspended`
 
 	cmdTag, err := pool.DB.Exec(context.Background(), query, studentEmail)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to suspend student: %v", err)
 	}
 
     if cmdTag.RowsAffected() == 0 {
-        return fmt.Errorf("no action taken for student %s, they might have been suspended concurrently", studentEmail)
+		return fmt.Errorf("no action taken for student %s, they might have been suspended", studentEmail)
     }
 	
 	return nil

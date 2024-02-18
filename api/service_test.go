@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -281,32 +282,56 @@ func TestSuspend(t *testing.T) {
 	query := `
 		UPDATE students 
 		SET suspended = true
-		WHERE email = $1`
+		WHERE email = $1 AND NOT suspended`
 	
 	t.Run("student is suspended successfully", func(t *testing.T) {
 		studentEmail := "studentmary@gmail.com"
+
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id FROM students WHERE email = $1")).
+			WithArgs(studentEmail).
+			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
+
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT suspended FROM students WHERE email = $1")).
+			WithArgs(studentEmail).
+			WillReturnRows(pgxmock.NewRows([]string{"suspended"}).AddRow(false))
+
 		mock.ExpectExec(regexp.QuoteMeta(query)).
 			WithArgs(studentEmail).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+			
 		err := teacherService.Suspend(studentEmail)
 		assert.NoError(t, err)
 	})
 
 	t.Run("student has already been suspended before", func(t *testing.T) {
 		studentEmail := "studentmary@gmail.com"
+
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id FROM students WHERE email = $1")).
+			WithArgs(studentEmail).
+			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
+
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT suspended FROM students WHERE email = $1")).
+			WithArgs(studentEmail).
+			WillReturnRows(pgxmock.NewRows([]string{"suspended"}).AddRow(true))
+
 		err := teacherService.Suspend(studentEmail)
-		assert.NoError(t, err)
+		assert.EqualError(t, err, fmt.Sprintf("student with email %s is already suspended", studentEmail))
 	})
 
 	t.Run("student does not exist", func(t *testing.T) {
 		studentEmail := "fakestudent@gmail.com"
+
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id FROM students WHERE email = $1")).
+			WithArgs(studentEmail).
+			WillReturnError(pgx.ErrNoRows)
+
 		err := teacherService.Suspend(studentEmail)
-		assert.Error(t, err)
+		assert.EqualError(t, err, fmt.Sprintf("could not find student with email %s", studentEmail))
 	})
 
 	t.Run("student email is empty", func(t *testing.T) {
 		studentEmail := ""
 		err := teacherService.Suspend(studentEmail)
-		assert.Error(t, err)
+		assert.EqualError(t, err, "student email cannot be empty")
 	})
 }
