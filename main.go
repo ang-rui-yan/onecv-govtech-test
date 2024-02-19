@@ -5,13 +5,10 @@ import (
 	"os"
 	"studentadmin/api"
 
-	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	router := gin.New()
-
 	var err error
 	err = godotenv.Load()
 	if err != nil {
@@ -38,17 +35,9 @@ func main() {
 
     defer dbPool.Close()
 
-
-    DB := api.NewDatabase(dbPool)
-    service := api.NewTeacherService(DB)
-    handler := api.NewTeacherHandler(service)
-
-	api := router.Group("/api")
-	
-	api.POST("/register", handler.RegisterHandler)
-	api.GET("/commonstudents", handler.GetCommonStudentsHandler)
-	api.POST("/suspend", handler.SuspendHandler)
-	api.POST("/retrievefornotifications", handler.RetrieveForNotificationsHandler)
+	DB := api.NewDatabase(dbPool)
+	service := api.NewTeacherService(DB)
+	router := api.SetupRouter(service)
 
 	router.Run("localhost:8080")
 }
