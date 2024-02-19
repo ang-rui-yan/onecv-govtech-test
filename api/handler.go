@@ -24,8 +24,24 @@ func (h *teacherHandler) RegisterHandler(c *gin.Context) {
 		return
 	}
 
-	if err := h.Service.RegisterStudentsToTeacher(requestBody.TeacherEmail, requestBody.StudentEmails); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	err := h.Service.RegisterStudentsToTeacher(requestBody.TeacherEmail, requestBody.StudentEmails)
+	if err != nil {
+		var statusCode int
+		var errorMessage string
+
+		switch err {
+		case ErrTeacherNotFound:
+			statusCode = http.StatusBadRequest
+			errorMessage = ErrTeacherNotFound.Error()
+		case ErrStudentNotFound:
+			statusCode = http.StatusNotFound
+			errorMessage = ErrStudentNotFound.Error()
+		default:
+			statusCode = http.StatusInternalServerError
+			errorMessage = "Internal server error"
+		}
+		
+		c.JSON(statusCode, gin.H{"error": errorMessage})
 		return
 	}
 

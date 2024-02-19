@@ -9,4 +9,5 @@ var (
 	ErrInvalidInput = errors.New("invalid input")
 	ErrFailedToUpdateSuspension = errors.New("failed to update student suspension status")
 	ErrBadRequest = errors.New("bad request")
+	ErrFailedToInsertTeacherStudentsTable = errors.New("failed to insert into teacher_students table")
 )

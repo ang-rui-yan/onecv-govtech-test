@@ -57,6 +57,8 @@ func (pool Database) GetTeacherID(teacherEmail string) (int, error) {
 }
 
 func (pool Database) RegisterStudentsToTeacher(teacherEmail string, studentEmails []string) error {
+	// we perform the checks for student emails existence in the repo layer in a function
+	// for speed of transaction
 	// begin transaction
 	ctx := context.Background()
 	tx, err := pool.DB.Begin(ctx)
@@ -69,7 +71,7 @@ func (pool Database) RegisterStudentsToTeacher(teacherEmail string, studentEmail
 	var teacherID int
 	err = tx.QueryRow(ctx, "SELECT id FROM teachers WHERE email = $1", teacherEmail).Scan(&teacherID)
 	if err != nil {
-		return fmt.Errorf("could not find teacher with email %s: %v", teacherEmail, err)
+		return fmt.Errorf("%v: email: %s", ErrTeacherNotFound, teacherEmail)
 	}
 
 	for _, studentEmail := range studentEmails {
@@ -77,14 +79,14 @@ func (pool Database) RegisterStudentsToTeacher(teacherEmail string, studentEmail
 		var studentID int
 		err = tx.QueryRow(ctx, "SELECT id FROM students WHERE email = $1", studentEmail).Scan(&studentID)
 		if err != nil {
-			return fmt.Errorf("could not find student with email %s: %v", studentEmail, err)
+			return fmt.Errorf("%v: email: %s", ErrStudentNotFound, studentEmail)
 		}
 
 		// Prepare the insert statement
 		query := "INSERT INTO teacher_students (teacher_id, student_id) VALUES ($1, $2) ON CONFLICT (teacher_id, student_id) DO NOTHING"
 		_, err = tx.Exec(ctx, query, teacherID, studentID)
 		if err != nil {
-			return fmt.Errorf("could not insert teacher-student relationship for teacher %s and student %s: %v", teacherEmail, studentEmail, err)
+			return fmt.Errorf("%v for teacher: %s and student: %s", ErrFailedToInsertTeacherStudentsTable, teacherEmail, studentEmail)
 		}
 	}
 

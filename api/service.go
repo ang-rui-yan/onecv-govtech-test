@@ -43,7 +43,14 @@ func (s *teacherService) GetTeacherID(teacherEmail string) (int, error) {
 func (s *teacherService) RegisterStudentsToTeacher(teacherEmail string, studentEmails []string) (error) {
 	err := s.db.RegisterStudentsToTeacher(teacherEmail, studentEmails)
 	if err != nil {
-		return err
+		switch err {
+		case ErrTeacherNotFound:
+			return ErrTeacherNotFound
+		case ErrStudentNotFound:
+			return ErrStudentNotFound
+		default:
+			return err
+		}
 	}
 
 	return nil
