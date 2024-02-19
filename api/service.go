@@ -11,6 +11,7 @@ type TeacherService interface {
 	RegisterStudentsToTeacher(teacherEmail string, studentEmails []string) (error)
 	GetCommonStudents(teacherEmails []string) ([]string, error)
 	Suspend(studentEmail string) error
+	RetrieveForNotifications(teacherEmail string, notification string) ([]string, error)
 }
 
 type teacherService struct {

@@ -12,10 +12,15 @@ type Teacher struct {
 }
 
 type RegistrationRequestBody struct {
-	Teacher string `json:"teacher" binding:"required"`
-	Students []string `json:"students" binding:"required"`
+	TeacherEmail string `json:"teacher" binding:"required"`
+	StudentEmails []string `json:"students" binding:"required"`
 }
 
 type SuspendRequestBody struct {
 	StudentEmail string `json:"student" binding:"required"`
+}
+
+type NotificationRequestBody struct {
+	TeacherEmail string `json:"teacher" binding:"required"`
+	Notification string `json:"notification" binding:"required"`
 }

@@ -23,7 +23,7 @@ func (h *teacherHandler) RegisterHandler(c *gin.Context) {
 		return
 	}
 
-	if err := h.Service.RegisterStudentsToTeacher(requestBody.Teacher, requestBody.Students); err != nil {
+	if err := h.Service.RegisterStudentsToTeacher(requestBody.TeacherEmail, requestBody.StudentEmails); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -68,5 +68,19 @@ func (h *teacherHandler) SuspendHandler(c *gin.Context) {
 
 
 func (h *teacherHandler) RetrieveForNotificationsHandler(c *gin.Context) {
-	panic("not implemented")
+	// read request body
+	var requestBody NotificationRequestBody
+
+	if err := c.BindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	studentEmails, err := h.Service.RetrieveForNotifications(requestBody.TeacherEmail, requestBody.Notification)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"recipients": studentEmails})
 }
