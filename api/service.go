@@ -96,6 +96,9 @@ func (s *teacherService) RetrieveForNotifications(teacherEmail string, notificat
     // Check if the teacher exists
     _, err = s.db.GetTeacherID(teacherEmail)
     if err != nil {
+		if errors.Is(err, ErrTeacherNotFound) {
+			return nil, ErrTeacherNotFound
+		}
         return nil, err
     }
 

@@ -115,6 +115,11 @@ func (h *teacherHandler) RetrieveForNotificationsHandler(c *gin.Context) {
 
 	studentEmails, err := h.Service.RetrieveForNotifications(requestBody.TeacherEmail, requestBody.Notification)
 	if err != nil {
+		if errors.Is(err, ErrTeacherNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": ErrTeacherNotFound.Error()})
+			return
+		}
+		
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
