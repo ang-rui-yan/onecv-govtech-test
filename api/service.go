@@ -1,7 +1,7 @@
 package api
 
 import (
-	"fmt"
+	"errors"
 	"studentadmin/utils"
 )
 
@@ -60,16 +60,20 @@ func (s *teacherService) GetCommonStudents(teacherEmails []string) ([]string, er
 
 func (s *teacherService) Suspend(studentEmail string) error {
 	if studentEmail == "" {
-		return fmt.Errorf("student email cannot be empty")
+		return ErrInvalidInput
 	}
 
 	_, err := s.db.GetStudentID(studentEmail)
-	if err != nil {
+	if errors.Is(err, ErrStudentNotFound) {
+		return ErrStudentNotFound
+	} else if err != nil {
 		return err
 	}
 
 	err = s.db.Suspend(studentEmail)
-	if err != nil {
+	if errors.Is(err, ErrStudentAlreadySuspended) {
+		return ErrStudentAlreadySuspended
+	} else if err != nil {
 		return err
 	}
 

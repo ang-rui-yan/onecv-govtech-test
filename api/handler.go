@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -28,7 +29,7 @@ func (h *teacherHandler) RegisterHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusNoContent, gin.H{"message": "Successfully registered!"})
+	c.Status(http.StatusNoContent)
 }
 
 
@@ -54,16 +55,36 @@ func (h *teacherHandler) SuspendHandler(c *gin.Context) {
 	var requestBody SuspendRequestBody
 
 	if err := c.BindJSON(&requestBody); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": ErrBadRequest.Error()})
 		return
 	}
 
-	if err := h.Service.Suspend(requestBody.StudentEmail); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	err := h.Service.Suspend(requestBody.StudentEmail)
+	if err != nil {
+		if errors.Is(err, ErrStudentAlreadySuspended) {
+			c.Status(http.StatusNoContent)
+		}
+
+		var statusCode int
+		var errorMessage string
+
+		switch err {
+		case ErrInvalidInput:
+			statusCode = http.StatusBadRequest
+			errorMessage = "Invalid input provided"
+		case ErrStudentNotFound:
+			statusCode = http.StatusNotFound
+			errorMessage = "Student is not found"
+		default:
+			statusCode = http.StatusInternalServerError
+			errorMessage = "Internal server error"
+		}
+
+		c.JSON(statusCode, gin.H{"error": errorMessage})
 		return
 	}
 
-	c.JSON(http.StatusNoContent, gin.H{"message": "Successfully suspended!"})
+	c.Status(http.StatusNoContent)
 }
 
 

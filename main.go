@@ -22,18 +22,18 @@ func main() {
 	pass := os.Getenv("PASSWORD")
 
 	dbPool, _, err := api.NewDBPool(api.DatabaseConfig{
-        Username : user,
-        Password : pass,
-        Hostname : host,
-        Port : port,
-        DBName : dbname,
-    })
+		Username: user,
+		Password: pass,
+		Hostname: host,
+		Port:     port,
+		DBName:   dbname,
+	})
 
-    if err != nil {
-        log.Fatalf("unexpected error while tried to connect to database: %v\n", err)
-    }
+	if err != nil {
+		log.Fatalf("unexpected error while tried to connect to database: %v\n", err)
+	}
 
-    defer dbPool.Close()
+	defer dbPool.Close()
 
 	DB := api.NewDatabase(dbPool)
 	service := api.NewTeacherService(DB)
