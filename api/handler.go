@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,7 +15,19 @@ func NewTeacherHandler(svc TeacherService) teacherHandler{
 }
 
 func (h *teacherHandler) RegisterHandler(c *gin.Context) {
-	panic("not implemented")
+	var requestBody RegistrationRequestBody
+
+	if err := c.BindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.Service.RegisterStudentsToTeacher(requestBody.Teacher, requestBody.Students); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{"message": "Successfully registered!"})
 }
 
 

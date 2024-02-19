@@ -11,3 +11,7 @@ type Teacher struct {
 	Email string
 }
 
+type RegistrationRequestBody struct {
+	Teacher string `json:"teacher" binding:"required"`
+	Students []string `json:"students" binding:"required"`
+}
