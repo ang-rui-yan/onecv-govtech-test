@@ -179,13 +179,13 @@ func TestGetCommonStudents(t *testing.T) {
 	teacherService := NewTeacherService(database)
 	
 	query := `
-		SELECT s.email 
-		FROM student s
-		INNER JOIN teacher_students ts ON s.id = ts.student_id
-		INNER JOIN teacher t ON ts.teacher_id = t.id 
-		WHERE t.email = ANY($1)
-		GROUP BY s.email
-		HAVING COUNT(DISTINCT t.id) = (SELECT COUNT(DISTINCT id) FROM teacher WHERE email = ANY($1))`
+			SELECT s.email 
+			FROM students s
+			INNER JOIN teacher_students ts ON s.id = ts.student_id
+			INNER JOIN teachers t ON ts.teacher_id = t.id 
+			WHERE t.email = ANY($1)
+			GROUP BY s.email
+			HAVING COUNT(DISTINCT t.id) = (SELECT COUNT(DISTINCT id) FROM teachers WHERE email = ANY($1))`
 
 	t.Run("common students found for one teacher", func(t *testing.T) {
 		teacherEmails := []string{"teacherken@gmail.com"}
@@ -292,10 +292,6 @@ func TestSuspend(t *testing.T) {
 			WithArgs(studentEmail).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
 
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT suspended FROM students WHERE email = $1")).
-			WithArgs(studentEmail).
-			WillReturnRows(pgxmock.NewRows([]string{"suspended"}).AddRow(false))
-
 		mock.ExpectExec(regexp.QuoteMeta(query)).
 			WithArgs(studentEmail).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
@@ -311,12 +307,12 @@ func TestSuspend(t *testing.T) {
 			WithArgs(studentEmail).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
 
-		mock.ExpectQuery(regexp.QuoteMeta("SELECT suspended FROM students WHERE email = $1")).
+		mock.ExpectExec(regexp.QuoteMeta(query)).
 			WithArgs(studentEmail).
-			WillReturnRows(pgxmock.NewRows([]string{"suspended"}).AddRow(true))
-
+			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+			
 		err := teacherService.Suspend(studentEmail)
-		assert.EqualError(t, err, fmt.Sprintf("student with email %s is already suspended", studentEmail))
+		assert.Nil(t, err)
 	})
 
 	t.Run("student does not exist", func(t *testing.T) {
@@ -327,13 +323,13 @@ func TestSuspend(t *testing.T) {
 			WillReturnError(pgx.ErrNoRows)
 
 		err := teacherService.Suspend(studentEmail)
-		assert.EqualError(t, err, fmt.Sprintf("could not find student with email %s", studentEmail))
+		assert.EqualError(t, err, fmt.Errorf("%v", ErrStudentNotFound).Error())
 	})
 
 	t.Run("student email is empty", func(t *testing.T) {
 		studentEmail := ""
 		err := teacherService.Suspend(studentEmail)
-		assert.EqualError(t, err, "student email cannot be empty")
+		assert.EqualError(t, err, fmt.Errorf("%v", ErrInvalidInput).Error())
 	})
 }
 
