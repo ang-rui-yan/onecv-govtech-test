@@ -1,3 +1,7 @@
+CREATE DATABASE studentadmindb;
+
+USE studentadmindb;
+
 CREATE TABLE teachers (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL
