@@ -10,15 +10,90 @@ The objective of this assessment is to build a Golang backend application with P
 
 1. POST /api/register
 
+    **Headers**: Content-Type: application/json
+
+    **Success response status**: HTTP 204
+
+    **Example request body**
+    ```json
+    {
+    "teacher": "teacherken@gmail.com"
+    "students":
+        [
+        "studentjon@gmail.com",
+        "studenthon@gmail.com"
+        ]
+    }
+    ```
+
 1. GET /api/commonstudents
+ 
+    **Headers**: Content-Type: application/json
+
+    **Success response status**: HTTP 200
+
+    **Querystring**:
+
+    - teacher, could be multiple
+        - GET /api/commonstudents?teacher=teacherken%40gmail.com
+        - GET /api/commonstudents?teacher=teacherken%40gmail.com&teacher=teacherjoe%40gmail.com
+
+    **Example response body**:
+    ```json
+    {
+        "students" :
+            [
+            "commonstudent1@gmail.com", 
+            "commonstudent2@gmail.com",
+            "student_only_under_teacher_ken@gmail.com"
+            ]
+    }
+    ```
 
 1. POST /api/suspend
 
+    **Headers**: Content-Type: application/json
+
+    **Success response status**: HTTP 204
+
+    **Example request body**:
+    ```json
+        {
+        "student" : "studentmary@gmail.com"
+        }
+    ```
+
 1. POST /api/retrievefornotifications
+
+    **Headers**: Content-Type: application/json
+
+    **Success response status**: HTTP 200
+
+    **Example request body**:
+    ```json
+        {
+            "teacher":  "teacherken@gmail.com",
+            "notification": "Hello students! @studentagnes@gmail.com @studentmiche@gmail.com"
+        }
+    ```
+
+    **Example response body**:
+    ```json
+        {
+            "recipients":
+                [
+                "studentbob@gmail.com",
+                "studentagnes@gmail.com", 
+                "studentmiche@gmail.com"
+                ]   
+        }
+    ```
 
 ## Running the Tests
 
-## Built with
+```bash
+go test ./...
+```
 
 ## Author
 

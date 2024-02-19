@@ -2,16 +2,17 @@ version: "3"
 services:
   db:
     image: postgres:14.1-alpine
-    restart: always
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${USER}
-      POSTGRES_PASSWORD: ${PASSWORD}
+      - POSTGRES_USER=${USER}
+      - POSTGRES_PASSWORD=${PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - DATABASE_HOST=${HOST}
     ports:
       - "5432:5432"
     volumes:
       - db:/var/lib/postgresql/data
-      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-networks
 
   app:
     container_name: studentadmin-api
@@ -21,14 +22,16 @@ services:
     restart: on-failure
     ports:
       - "8080:8080"
-    environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=${USER}
-      - DB_PASSWORD=${PASSWORD}
-      - DB_NAME=${DB_NAME}
+    env_file:
+      - .env
     depends_on:
       - db
+    networks:
+      - app-networks
 
 volumes:
   db:
+
+networks:
+  app-networks:
+    driver: bridge

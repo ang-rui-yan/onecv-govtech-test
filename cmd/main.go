@@ -4,12 +4,9 @@ import (
 	"log"
 	"os"
 	"studentadmin/api"
-
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	godotenv.Load("./.env")
 	host := os.Getenv("HOST")
 	port := os.Getenv("PORT")
 	user := os.Getenv("USER")
