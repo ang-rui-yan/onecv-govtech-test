@@ -6,6 +6,23 @@ The objective of this assessment is to build a Golang backend application with P
 
 ## Installation
 
+1. Add in appropriate environment variables
+    ```
+    COPY .env.example .env
+    ```
+
+1. Install go mod
+    ```
+    go mod download
+    ```
+
+1. Start psql and run the init.sql in the terminal
+
+1. Start the server
+    ```
+    go run ./cmd
+    ```
+
 ## API endpoints
 
 1. POST /api/register
