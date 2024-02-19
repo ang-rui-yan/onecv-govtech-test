@@ -8,6 +8,14 @@ The objective of this assessment is to build a Golang backend application with P
 
 ## API endpoints
 
+1. POST /api/register
+
+1. GET /api/commonstudents
+
+1. POST /api/suspend
+
+1. POST /api/retrievefornotifications
+
 ## Running the Tests
 
 ## Built with
