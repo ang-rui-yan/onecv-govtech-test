@@ -5,7 +5,6 @@ go 1.21.3
 require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/jackc/pgx/v5 v5.5.3
-	github.com/joho/godotenv v1.5.1
 	github.com/pashagolub/pgxmock/v3 v3.3.0
 	github.com/stretchr/testify v1.8.4
 )
