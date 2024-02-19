@@ -9,12 +9,7 @@ import (
 )
 
 func main() {
-	var err error
-	err = godotenv.Load()
-	if err != nil {
-		log.Println("Error has occurred on .env file. Please check.")
-	}
-
+	godotenv.Load("./.env")
 	host := os.Getenv("HOST")
 	port := os.Getenv("PORT")
 	user := os.Getenv("USER")
@@ -39,5 +34,5 @@ func main() {
 	service := api.NewTeacherService(DB)
 	router := api.SetupRouter(service)
 
-	router.Run("localhost:8080")
+	router.Run("0.0.0.0:8080")
 }

@@ -1,6 +1,4 @@
-
--- create a database if not exist
-CREATE DATABASE IF NOT EXISTS studentadmindb;
+CREATE DATABASE studentadmindb;
 
 \c studentadmindb;
 
