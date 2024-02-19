@@ -1,11 +1,16 @@
 package api
 
 import (
+	"studentadmin/api/middleware"
+
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRouter(service TeacherService) *gin.Engine {
 	router := gin.New()
+
+	router.Use(middleware.LogMiddleware())
+	router.Use(middleware.ContentTypeMiddleware())
 
 	apiGroup := router.Group("/api")
 	{

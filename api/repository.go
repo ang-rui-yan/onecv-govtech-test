@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+// interface for mocks and actual
 type PgxPoolIface interface {
 	Begin(context.Context) (pgx.Tx, error)
 	Exec(context.Context, string, ...interface{}) (pgconn.CommandTag, error)
@@ -25,6 +26,7 @@ func NewDatabase(ds PgxPoolIface) Database {
     return Database{DB: ds}
 }
 
+// get student id from email
 func (pool Database) GetStudentID (studentEmail string) (int, error) {
 	query := "SELECT id FROM students WHERE email = $1"
 
@@ -39,6 +41,7 @@ func (pool Database) GetStudentID (studentEmail string) (int, error) {
 	return studentID, nil
 }
 
+// Get teacher id from email
 func (pool Database) GetTeacherID(teacherEmail string) (int, error) {
 	query := "SELECT id FROM teachers WHERE email = $1"
 
@@ -94,6 +97,8 @@ func (pool Database) RegisterStudentsToTeacher(teacherEmail string, studentEmail
 }
 
 func (pool Database) GetCommonStudents(teacherEmails []string) ([]string, error) {
+	// join all the tables and see where the teacher email matches
+	// get the distinct ones
 	query := `
 			SELECT s.email 
 			FROM students s
@@ -109,6 +114,7 @@ func (pool Database) GetCommonStudents(teacherEmails []string) ([]string, error)
 	}
 	defer rows.Close()
 
+	// loop through the students retrieved
 	var students []string
 	for rows.Next() {
 		var studentEmail string
@@ -127,10 +133,10 @@ func (pool Database) GetCommonStudents(teacherEmails []string) ([]string, error)
 
 
 func (pool Database) Suspend(studentEmail string) error {
-	ctx := context.Background()
-
 	var suspended bool
-	err := pool.DB.QueryRow(ctx, "SELECT suspended FROM students WHERE email = $1", studentEmail).
+
+	// check if the student is already suspended
+	err := pool.DB.QueryRow(context.Background(), "SELECT suspended FROM students WHERE email = $1", studentEmail).
 			Scan(&suspended)
 	if err != nil {
 		return fmt.Errorf("could not query student suspension status: %v", err)
