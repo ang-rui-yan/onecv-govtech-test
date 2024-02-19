@@ -96,12 +96,12 @@ func (pool Database) RegisterStudentsToTeacher(teacherEmail string, studentEmail
 func (pool Database) GetCommonStudents(teacherEmails []string) ([]string, error) {
 	query := `
 			SELECT s.email 
-			FROM student s
+			FROM students s
 			INNER JOIN teacher_students ts ON s.id = ts.student_id
-			INNER JOIN teacher t ON ts.teacher_id = t.id 
+			INNER JOIN teachers t ON ts.teacher_id = t.id 
 			WHERE t.email = ANY($1)
 			GROUP BY s.email
-			HAVING COUNT(DISTINCT t.id) = (SELECT COUNT(DISTINCT id) FROM teacher WHERE email = ANY($1))`
+			HAVING COUNT(DISTINCT t.id) = (SELECT COUNT(DISTINCT id) FROM teachers WHERE email = ANY($1))`
 
 	rows, err := pool.DB.Query(context.Background(), query, teacherEmails)
 	if err != nil {

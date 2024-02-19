@@ -15,6 +15,7 @@ func NewTeacherHandler(svc TeacherService) teacherHandler{
 }
 
 func (h *teacherHandler) RegisterHandler(c *gin.Context) {
+	// request body
 	var requestBody RegistrationRequestBody
 
 	if err := c.BindJSON(&requestBody); err != nil {
@@ -32,7 +33,19 @@ func (h *teacherHandler) RegisterHandler(c *gin.Context) {
 
 
 func (h *teacherHandler) GetCommonStudentsHandler(c *gin.Context) {
-	panic("not implemented")
+	// querystring
+	queryString := c.Request.URL.Query()
+
+	// read the querystring for teachers
+	teacherEmails := queryString["teacher"]
+
+	studentEmails, err := h.Service.GetCommonStudents(teacherEmails)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"students": studentEmails})
 }
 
 

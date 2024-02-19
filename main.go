@@ -50,5 +50,5 @@ func main() {
 	api.POST("/suspend", handler.SuspendHandler)
 	api.POST("/retrievefornotifications", handler.RetrieveForNotificationsHandler)
 
-	router.Run(":8080")
+	router.Run("localhost:8080")
 }
