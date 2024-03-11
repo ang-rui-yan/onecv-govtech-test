@@ -13,6 +13,10 @@ func SetupRouter(service TeacherService) *gin.Engine {
 	router.Use(middleware.LogMiddleware())
 	router.Use(middleware.ContentTypeMiddleware())
 
+	router.GET("/health", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, "service is running")
+	})
+
 	apiGroup := router.Group("/api")
 	{
 		handler := NewTeacherHandler(service)
@@ -20,9 +24,6 @@ func SetupRouter(service TeacherService) *gin.Engine {
 		apiGroup.GET("/commonstudents", handler.GetCommonStudentsHandler)
 		apiGroup.POST("/suspend", handler.SuspendHandler)
 		apiGroup.POST("/retrievefornotifications", handler.RetrieveForNotificationsHandler)
-		apiGroup.GET("/health", func(ctx *gin.Context) {
-			ctx.JSON(http.StatusOK, "service is running")
-		})
 	}
 
 	return router

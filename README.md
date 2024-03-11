@@ -29,7 +29,7 @@ The objective of this assessment is to build a Golang backend application with P
 1. Start the server
 
    ```
-   go run .
+   go run cmd/main.go
    ```
 
 1. To clear the database
