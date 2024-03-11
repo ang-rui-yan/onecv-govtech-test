@@ -4,26 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type DatabaseConfig struct {
-    Username string
-    Password string
-    Hostname string
-    Port string
-    DBName string
-}
-
-
-// form the connection string
-func (db DatabaseConfig) DSN() string {
-    return fmt.Sprintf("postgres://%s:%s@%s:%s/%s", 
-        db.Username, db.Password, db.Hostname, db.Port, db.DBName)
-}
 
 type DBStore struct {
 	dbPool *pgxpool.Pool
@@ -36,12 +21,12 @@ func (ds DBStore) Pool() *pgxpool.Pool {
 	return ds.dbPool
 }
 
-func NewDBPool(dbConfig DatabaseConfig) (*pgxpool.Pool, func(), error) {
+func NewDBPool(dbURL string) (*pgxpool.Pool, func(), error) {
 
 	f := func() {}
 
     // create pgx connection pool
-	pool, err := pgxpool.New(context.Background(), dbConfig.DSN())
+	pool, err := pgxpool.New(context.Background(), dbURL)
 
 	if err != nil {
         return nil, f, errors.New("database connection error")

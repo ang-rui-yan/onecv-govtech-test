@@ -1,19 +1,5 @@
 version: "3"
 services:
-  db:
-    image: postgres:14.1-alpine
-    environment:
-      - POSTGRES_USER=${USER}
-      - POSTGRES_PASSWORD=${PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
-      - DATABASE_HOST=${HOST}
-    ports:
-      - "5432:5432"
-    volumes:
-      - db:/var/lib/postgresql/data
-    networks:
-      - app-networks
-
   app:
     container_name: studentadmin-api
     build:
@@ -24,14 +10,3 @@ services:
       - "8080:8080"
     env_file:
       - .env
-    depends_on:
-      - db
-    networks:
-      - app-networks
-
-volumes:
-  db:
-
-networks:
-  app-networks:
-    driver: bridge

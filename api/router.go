@@ -1,6 +1,7 @@
 package api
 
 import (
+	"net/http"
 	"studentadmin/api/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -19,6 +20,9 @@ func SetupRouter(service TeacherService) *gin.Engine {
 		apiGroup.GET("/commonstudents", handler.GetCommonStudentsHandler)
 		apiGroup.POST("/suspend", handler.SuspendHandler)
 		apiGroup.POST("/retrievefornotifications", handler.RetrieveForNotificationsHandler)
+		apiGroup.GET("/health", func(ctx *gin.Context) {
+			ctx.JSON(http.StatusOK, "service is running")
+		})
 	}
 
 	return router

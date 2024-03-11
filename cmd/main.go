@@ -4,17 +4,16 @@ import (
 	"log"
 	"os"
 	"studentadmin/api"
+	"studentadmin/cmd/cli"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	host := os.Getenv("HOST")
-	port := os.Getenv("PORT")
-	user := os.Getenv("USER")
-	dbname := os.Getenv("DB_NAME")
-	pass := os.Getenv("PASSWORD")
+	godotenv.Load("./.env")
+	dbURL := os.Getenv("POSTGRESQL_URL")
 
 	maxRetries := 5
 	retryDelay := 5 * time.Second
@@ -24,13 +23,7 @@ func main() {
 	// Attempt to connect to the database with retries.
 	for i := 0; i < maxRetries; i++ {
 		var err error
-		dbPool, _, err = api.NewDBPool(api.DatabaseConfig{
-			Username: user,
-			Password: pass,
-			Hostname: host,
-			Port:     port,
-			DBName:   dbname,
-		})
+		dbPool, _, err = api.NewDBPool(dbURL)
 
 		if err == nil {
 			break
@@ -46,6 +39,8 @@ func main() {
 	}
 
 	defer dbPool.Close()
+
+	cli.Execute(dbURL)
 
 	DB := api.NewDatabase(dbPool)
 	service := api.NewTeacherService(DB)
